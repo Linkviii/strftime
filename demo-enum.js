@@ -68,6 +68,63 @@ demo("%z");
 demo("%%");
 
 
+function findMaxRepresentation(formatter, format, date, costFn) {
+    costFn = costFn || (s => s.length);
+
+    /**  @type {string[][]} */
+    const enumeration = formatter.enumerate(format, date);
+
+    const maxFormatParts = [];
+    // Calling the cost function may be expensive, so well keep track of costs
+    const maxCost = [];
+
+    for (let options of enumeration) {
+        const optionCosts = options.map(costFn);
+        const maxIndex = optionCosts.reduce((iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0);
+
+        maxFormatParts.push(options[maxIndex]);
+        maxCost.push(optionCosts[maxIndex]);
+    }
+
+    const maxRepresentation = maxFormatParts.join('');
+    const totalCost = maxCost.reduce((a, b) => a + b);
+    return [totalCost, maxRepresentation];
+
+}
+
 
 console.log("---------");
 console.log(Time);
+console.log("---------");
+let cost, repr;
+let format = "%c";
+[cost, repr] = findMaxRepresentation(strftimeUTC, format, Time);
+console.log('', `'${format}' costs ${cost} → '${repr}'`);
+
+format = "%A %B";
+[cost, repr] = findMaxRepresentation(strftimeUTC, format, Time);
+console.log('', `'${format}' costs ${cost} → '${repr}'`);
+
+function vowelCount(str) {
+
+    /**@type {string} */
+    let s = str;
+    let a = s.toLowerCase().split('');
+    let vowelCount = 0;
+    for (let c of a) {
+        if (
+            c === 'a' ||
+            c === 'e' ||
+            c === 'i' ||
+            c === 'o' ||
+            c === 'u'
+        )
+            vowelCount++;
+    }
+    return vowelCount;
+
+}
+
+format = "%A %B";
+[cost, repr] = findMaxRepresentation(strftimeUTC, format, Time, vowelCount);
+console.log('', `'${format}' costs ${cost} → '${repr}'`);
