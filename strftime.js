@@ -345,61 +345,18 @@
         }
 
 
-        // 
-        function _strftimeEnum(format, date) {
-            var timestamp;
 
-            if (!date) {
-                var currentTimestamp = Date.now();
-                if (currentTimestamp > _cachedDateTimestamp) {
-                    _cachedDateTimestamp = currentTimestamp;
-                    _cachedDate = new Date(_cachedDateTimestamp);
-
-                    timestamp = _cachedDateTimestamp;
-
-                    if (_useUtcBasedDate) {
-                        // how to avoid duplication of date instantiation for utc here?
-                        // we tied to getTimezoneOffset of the current date
-                        _cachedDate = new Date(_cachedDateTimestamp + getTimestampToUtcOffsetFor(_cachedDate) + _customTimezoneOffset);
-                    }
-                }
-                else {
-                    timestamp = _cachedDateTimestamp;
-                }
-                date = _cachedDate;
-            }
-            else {
-                timestamp = date.getTime();
-
-                if (_useUtcBasedDate) {
-                    var utcOffset = getTimestampToUtcOffsetFor(date);
-                    date = new Date(timestamp + utcOffset + _customTimezoneOffset);
-                    // If we've crossed a DST boundary with this calculation we need to
-                    // adjust the new date accordingly or it will be off by an hour in UTC.
-                    if (getTimestampToUtcOffsetFor(date) !== utcOffset) {
-                        var newUTCOffset = getTimestampToUtcOffsetFor(date);
-                        date = new Date(timestamp + newUTCOffset + _customTimezoneOffset);
-                    }
-                }
-            }
-
-            return _enumerateFormat(format, date, _locale, timestamp);
-        }
 
         function _processFormat(format, date, locale, timestamp) {
-            // let resultString = ''
-            let padding = null,
+            var resultString = '',
+                padding = null,
                 isInScope = false,
                 length = format.length,
                 extendedTZ = false;
 
-            let result = [];
+            for (var i = 0; i < length; i++) {
 
-            for (let i = 0; i < length; i++) {
-
-                let resultString = '';
-
-                let currentCharCode = format.charCodeAt(i);
+                var currentCharCode = format.charCodeAt(i);
 
                 if (isInScope === true) {
                     // '-'
@@ -546,7 +503,7 @@
                             }
                             else {
                                 // fixme optimize
-                                let tzString = date.toString().match(/\(([\w\s]+)\)/);
+                                var tzString = date.toString().match(/\(([\w\s]+)\)/);
                                 resultString += tzString && tzString[1] || '';
                             }
                             break;
@@ -590,11 +547,9 @@
                         // '000'
                         // case 'j':
                         case 106:
-                            {
-                                let y = new Date(date.getFullYear(), 0, 1);
-                                let day = Math.ceil((date.getTime() - y.getTime()) / (1000 * 60 * 60 * 24));
-                                resultString += padTill3(day);
-                            }
+                            var y = new Date(date.getFullYear(), 0, 1);
+                            var day = Math.ceil((date.getTime() - y.getTime()) / (1000 * 60 * 60 * 24));
+                            resultString += padTill3(day);
                             break;
 
                         // ' 0'
@@ -626,14 +581,12 @@
                         case 111:
                             // Try to use an ordinal suffix from the locale, but fall back to using the old
                             // function for compatibility with old locales that lack them.
-                            {
-                                let day = date.getDate();
-                                if (locale.ordinalSuffixes) {
-                                    resultString += String(day) + (locale.ordinalSuffixes[day - 1] || ordinal(day));
-                                }
-                                else {
-                                    resultString += String(day) + ordinal(day);
-                                }
+                            var day = date.getDate();
+                            if (locale.ordinalSuffixes) {
+                                resultString += String(day) + (locale.ordinalSuffixes[day - 1] || ordinal(day));
+                            }
+                            else {
+                                resultString += String(day) + ordinal(day);
                             }
                             break;
 
@@ -664,10 +617,8 @@
                         // '4'
                         // case 'u':
                         case 117:
-                            {
-                                let day = date.getDay();
-                                resultString += day === 0 ? 7 : day;
-                            }
+                            var day = date.getDay();
+                            resultString += day === 0 ? 7 : day;
                             break; // 1 - 7, Monday is first day of the week
 
                         // ' 1-Jan-1970'
@@ -701,17 +652,17 @@
                                 resultString += extendedTZ ? "+00:00" : "+0000";
                             }
                             else {
-                                let off;
+                                var off;
                                 if (_customTimezoneOffset !== 0) {
                                     off = _customTimezoneOffset / (60 * 1000);
                                 }
                                 else {
                                     off = -date.getTimezoneOffset();
                                 }
-                                let sign = off < 0 ? '-' : '+';
-                                let sep = extendedTZ ? ':' : '';
-                                let hours = Math.floor(Math.abs(off / 60));
-                                let mins = Math.abs(off % 60);
+                                var sign = off < 0 ? '-' : '+';
+                                var sep = extendedTZ ? ':' : '';
+                                var hours = Math.floor(Math.abs(off / 60));
+                                var mins = Math.abs(off % 60);
                                 resultString += sign + padTill2(hours) + sep + padTill2(mins);
                             }
                             break;
@@ -724,25 +675,21 @@
                             break;
                     }
 
-                    result.push(resultString);
-
                     padding = null;
                     isInScope = false;
                     continue;
-                } else
+                }
 
-                    // '%'
-                    if (currentCharCode === 37) {
-                        isInScope = true;
-                        continue;
-                    }
+                // '%'
+                if (currentCharCode === 37) {
+                    isInScope = true;
+                    continue;
+                }
 
                 resultString += format[i];
-                result.push(resultString);
-
             }
 
-            return result.join('');
+            return resultString;
         }
 
         var strftime = _strftime;
@@ -756,6 +703,47 @@
         // ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
 
 
+
+        // 
+        function _strftimeEnum(format, date) {
+            var timestamp;
+
+            if (!date) {
+                var currentTimestamp = Date.now();
+                if (currentTimestamp > _cachedDateTimestamp) {
+                    _cachedDateTimestamp = currentTimestamp;
+                    _cachedDate = new Date(_cachedDateTimestamp);
+
+                    timestamp = _cachedDateTimestamp;
+
+                    if (_useUtcBasedDate) {
+                        // how to avoid duplication of date instantiation for utc here?
+                        // we tied to getTimezoneOffset of the current date
+                        _cachedDate = new Date(_cachedDateTimestamp + getTimestampToUtcOffsetFor(_cachedDate) + _customTimezoneOffset);
+                    }
+                }
+                else {
+                    timestamp = _cachedDateTimestamp;
+                }
+                date = _cachedDate;
+            }
+            else {
+                timestamp = date.getTime();
+
+                if (_useUtcBasedDate) {
+                    var utcOffset = getTimestampToUtcOffsetFor(date);
+                    date = new Date(timestamp + utcOffset + _customTimezoneOffset);
+                    // If we've crossed a DST boundary with this calculation we need to
+                    // adjust the new date accordingly or it will be off by an hour in UTC.
+                    if (getTimestampToUtcOffsetFor(date) !== utcOffset) {
+                        var newUTCOffset = getTimestampToUtcOffsetFor(date);
+                        date = new Date(timestamp + newUTCOffset + _customTimezoneOffset);
+                    }
+                }
+            }
+
+            return _enumerateFormat(format, date, _locale, timestamp);
+        }
         function _enumerateFormat(format, date, locale, timestamp) {
             // let resultString = ''
             let padding = null,
